@@ -1,144 +1,82 @@
-# Fine-grained Interpolation for LiDAR Continuity
+# Fine-grained Interpolation for LiDAR Continuity (filc)
 
-## 1. 빌드
+Ouster OS1-32 LiDAR의 32채널 포인트클라우드를 128채널로 실시간 보간하는 ROS2 패키지
 
+## 개요
+- **목표**: 32채널 → 128채널 포인트클라우드 보간
+- **입력**: `/ouster/points` (32×1024)
+- **출력**: `/ouster/improved_interpolated_points` (128×1024)
+- **성능**: 실시간 처리 (>10Hz)
+
+## 빠른 시작
+
+### 1. 빌드
 ```bash
-# 빌드 스크립트 실행
-cd /home/user1/ROS2_Workspace/ros2_ws/src/filc/scripts
-./build_and_test.sh
-
-# 또는 수동 빌드
 cd /home/user1/ROS2_Workspace/ros2_ws
 colcon build --packages-select filc
 source install/setup.bash
 ```
 
-## 2. 실행 방법
-
-### 방법 1: Launch 파일 사용 (권장)
+### 2. 실행
 ```bash
-ros2 launch filc test_interpolation.launch.py
+# Launch 파일 사용 (권장)
+ros2 launch filc interpolation.launch.py
+
+# 파라미터 조정
+ros2 launch filc interpolation.launch.py scale_factor:=2.0
+
+# 노드 직접 실행
+ros2 run filc improved_interpolation_node
 ```
 
-옵션 설정:
+### 3. 모니터링
 ```bash
-ros2 launch filc test_interpolation.launch.py \
-  input_topic:=/ouster/points \
-  output_topic:=/ouster/interpolated_points \
-  scale_factor:=4.0
-```
-
-### 방법 2: 개별 노드 실행
-```bash
-# Terminal 1: 보간 노드
-ros2 run filc test_interpolation_node
-
-# Terminal 2: 시각화
+# 실시간 통계
 ros2 run filc visualize_interpolation.py
+
+# 성능 벤치마크
+ros2 run filc benchmark_interpolation.py
 ```
 
-## 3. 확인
+## 주요 기능
 
-### 토픽 확인
+### improved_interpolation_node
+- **XYZ 직접 보간**: 안정적이고 빠른 처리
+- **적응적 보간**: 불연속성 감지 (>0.5m) 시 nearest neighbor
+- **병렬 처리**: OpenMP를 통한 멀티코어 활용
+- **설정 가능**: scale factor 2.0~4.0 동적 조정
+
+### 파라미터
+| 파라미터 | 기본값 | 설명 |
+|---------|--------|------|
+| scale_factor | 4.0 | 보간 배율 (2.0, 3.0, 4.0 권장) |
+| interpolation_method | cubic | 보간 방법 (linear/cubic) |
+| discontinuity_threshold | 0.5 | 불연속성 임계값 (m) |
+| use_image_features | false | 이미지 특징 사용 (개발 중) |
+
+## 설정 파일
+`config/interpolation_config.yaml`에서 상세 설정 가능
+
+## 토픽
+- **입력**: `/ouster/points` - 원본 32채널 포인트클라우드
+- **출력**: `/ouster/improved_interpolated_points` - 보간된 128채널 포인트클라우드
+
+## 시각화
 ```bash
-# 토픽 리스트
-ros2 topic list
-
-# 출력 확인
-ros2 topic echo /ouster/interpolated_points --no-arr --once
-
-# 주파수 확인
-ros2 topic hz /ouster/interpolated_points
-```
-
-### RViz2 시각화
-```bash
+# RViz2
 rviz2
-
-# PointCloud2 디스플레이 추가
-# Topic: /ouster/interpolated_points
-# Fixed Frame: os_sensor 또는 ouster_lidar
+# PointCloud2 추가, Topic: /ouster/improved_interpolated_points
+# Fixed Frame: os_sensor
 ```
 
-## 4. 파라미터 조정
+## 문제 해결
 
-### 런타임 파라미터 변경
-```bash
-# 스케일 팩터 변경 (예: 2배 보간)
-ros2 param set /test_interpolation_node scale_factor 2.0
-```
+### QoS 호환성
+센서 데이터는 best_effort QoS 사용. 이미 스크립트에 반영됨.
 
-### 사용 가능한 파라미터
-- `input_topic`: 입력 포인트클라우드 토픽 (기본: /ouster/points)
-- `output_topic`: 출력 포인트클라우드 토픽 (기본: /ouster/interpolated_points)
-- `scale_factor`: 보간 배율 (기본: 4.0, 32→128 채널)
+### 성능 최적화
+- scale_factor를 낮춰서 테스트 (2.0부터 시작)
+- CPU 코어 수에 따라 자동 병렬화
 
-## 5. 예상 결과
-
-### 정상 작동 시:
-```
-[INFO] Test Interpolation Node Started
-  Input: /ouster/points
-  Output: /ouster/interpolated_points
-  Scale Factor: 4.0
-
-[INFO] === Interpolation Statistics ===
-  Frames processed: 50
-  Average time: 45.32 ms
-  Average FPS: 22.1
-  Scale factor: 4.0x (32->128 channels)
-```
-
-### 시각화 출력:
-```
-============================================================
-Interpolation Statistics - 14:35:22
-============================================================
-Original PointCloud:
-  Dimensions: 32x1024
-  Total points: 32,768
-  Data size: 0.50 MB
-Interpolated PointCloud:
-  Dimensions: 128x1024
-  Total points: 131,072
-  Data size: 2.00 MB
-Comparison:
-  Height ratio: 4.00x
-  Points ratio: 4.00x
-  Data size ratio: 4.00x
-Frames processed: 120
-============================================================
-```
-
-## 6. 문제 해결
-
-### 데이터가 없을 때
-```bash
-# Ouster 드라이버 실행 확인
-ros2 node list | grep ouster
-
-# 토픽 데이터 확인
-ros2 topic echo /ouster/points --once
-```
-
-### 성능 이슈
-- `scale_factor`를 낮춰보세요 (예: 2.0)
-- CPU 사용률 확인: `htop`
-
-### 보간 품질
-- 현재는 간단한 선형 보간 사용
-- 향후 구면 좌표계 기반 정밀 보간으로 업그레이드 예정
-
-## 7. 다음 단계
-
-1. **Range Image 기반 보간 구현**
-   - Armadillo 라이브러리 통합
-   - 2D 보간 최적화
-
-2. **구면 좌표계 정밀 보간**
-   - 큐빅 스플라인 고도각 보간
-   - Ouster 공식 좌표 변환
-
-3. **품질 개선**
-   - 분산 기반 검증
-   - 에지 보존 처리
+## 라이선스
+MIT License
