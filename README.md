@@ -1,4 +1,4 @@
-# 빠른 시작 가이드 - 포인트클라우드 보간 테스트
+# Fine-grained Interpolation for LiDAR Continuity
 
 ## 1. 빌드
 
