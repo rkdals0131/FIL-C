@@ -1,0 +1,119 @@
+# filc OS1-32 LiDAR Interpolation Configuration
+# Ouster OS1-32 센서용 간소화된 설정
+
+# 보간 설정
+interpolation:
+  enable: true
+  scale_factor: 4.0
+  type: "BICUBIC"  # LINEAR, CUBIC, BICUBIC, LANCZOS, ADAPTIVE
+  preserve_edges: true
+  edge_threshold: 2.0
+  fill_invalid_pixels: true
+  use_multithreading: true
+  num_threads: 0  # 0 = 자동 감지 (CPU 코어 수 기준)
+  
+  # 하이브리드 보간 모드 (전방 180도만 보간, 후방은 원본 사용)
+  hybrid_mode:
+    enable: true
+    front_sector_degrees: 270  # 전방 보간 영역 (도)
+    front_start_angle: 45      # 전방 시작 각도 (도) - 90도(좌측)에서 시작
+    front_end_angle: 315       # 전방 끝 각도 (도) - 270도(우측)에서 끝
+    rear_upsampling: "NEAREST" # 후방 원본 데이터의 상하 확장 방법: NEAREST, LINEAR
+    
+    # 새로운 포인트 추가 방식 설정
+    point_augmentation:
+      enable: true                    # 원본 포인트 클라우드에 새로운 포인트만 추가
+      interpolated_points_only: true  # 보간으로 생성된 새로운 행의 포인트만 추가
+      merge_strategy: "ADDITIVE"      # ADDITIVE(추가), REPLACE(대체)
+
+# OS1-32 센서 설정
+ouster_os1_32:
+  lidar_mode: 1024  # 해상도 (columns per revolution)
+  pixels_per_column: 32  # OS1-32 = 32개 채널
+  lidar_origin_to_beam_origin_mm: 15.806
+  
+  # OS1-32 고도각 (degrees) - 32개 채널
+  beam_altitude_angles:
+    - -16.611
+    - -16.084
+    - -15.557
+    - -15.029
+    - -14.502
+    - -13.975
+    - -13.447
+    - -12.920
+    - -12.393
+    - -11.865
+    - -11.338
+    - -10.811
+    - -10.283
+    - -9.756
+    - -9.229
+    - -8.701
+    - -8.174
+    - -7.646
+    - -7.119
+    - -6.592
+    - -6.064
+    - -5.537
+    - -5.010
+    - -4.482
+    - -3.955
+    - -3.428
+    - -2.900
+    - -2.373
+    - -1.846
+    - -1.318
+    - -0.791
+    - -0.264
+
+# 토픽 설정
+topics:
+  input:
+    range_image: "/ouster/range_image"
+    signal_image: "/ouster/signal_image"
+    points: "/ouster/points"              # 원본 포인트 클라우드 추가
+  output:
+    interpolated_range: "/ouster/interpolated_range_image" 
+    interpolated_signal: "/ouster/interpolated_signal_image"
+    interpolated_points: "/ouster/interpolated_points"      # 보강된 포인트 클라우드
+    augmented_points: "/ouster/augmented_points"           # 원본 + 새로운 포인트들
+
+# 성능 최적화 설정 (하이브리드 모드 최적화)
+performance:
+  # 멀티스레딩 설정
+  num_threads: 0  # 0 = 자동 (CPU 코어 수)
+  
+  # 공간 최적화 - 거리 기반 필터링
+  max_range: 50.0  # 최대 거리 (미터)
+  min_range: 0.1   # 최소 거리 (미터)
+  
+  # 배치 처리 크기 (메모리 vs 성능 균형)
+  batch_size: 5000
+  
+  # 포인트 추가 최적화
+  point_augmentation:
+    cache_original_cloud: true     # 원본 포인트 클라우드 캐시
+    reuse_coordinates: true        # 좌표 계산 재사용
+    memory_efficient: true         # 메모리 효율적 추가 방식
+    
+  # 하이브리드 모드 최적화
+  hybrid_optimizations:
+    process_front_parallel: true    # 전방 영역을 병렬로 처리
+    cache_rear_coordinates: true    # 후방 영역 좌표를 캐시
+    memory_pool_size_mb: 100       # 메모리 풀 크기 (MB)
+    
+  # 좌표 변환 최적화
+  coordinate_transform:
+    use_lookup_table: true     # 삼각함수 룩업 테이블 사용
+    precompute_angles: true    # 각도를 미리 계산
+    cache_beam_vectors: true   # 빔 벡터 캐시
+  
+  # 모니터링
+  enable_monitoring: true
+  log_interval_ms: 2000
+  
+debug:
+  enable: false
+  verbose_logging: false
+  hybrid_debug: false  # 하이브리드 모드 디버그 정보 
