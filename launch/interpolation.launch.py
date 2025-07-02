@@ -17,12 +17,6 @@ def generate_launch_description():
         description='Path to interpolation config file'
     )
     
-    scale_factor_arg = DeclareLaunchArgument(
-        'scale_factor',
-        default_value='4.0',
-        description='Interpolation scale factor (2.0, 3.0, 4.0)'
-    )
-    
     # Improved Interpolation Node
     interpolation_node = Node(
         package='filc',
@@ -31,14 +25,10 @@ def generate_launch_description():
         output='screen',
         parameters=[
             LaunchConfiguration('config_file'),
-            {
-                'scale_factor': LaunchConfiguration('scale_factor'),
-            }
         ]
     )
     
     return LaunchDescription([
         config_file_arg,
-        scale_factor_arg,
         interpolation_node,
     ])

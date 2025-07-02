@@ -4,19 +4,19 @@
 improved_interpolation_node:
   ros__parameters:
     # 기본 보간 설정
+    # 보간 배율 (32채널 → 32*scale_factor 채널)
+    scale_factor: 2.0  # 2.0, 3.0, 4.0 권장
+    
+    # 보간 방법
+    interpolation_method: "cubic"  # "linear", "cubic"
+    
+    # 이미지 특징 사용 여부
+    use_image_features: false  # 현재는 false 권장 (개발 중)
+
     interpolation:
-      # 보간 배율 (32채널 → 32*scale_factor 채널)
-      scale_factor: 4.0  # 2.0, 3.0, 4.0 권장
-      
-      # 보간 방법
-      interpolation_method: "cubic"  # "linear", "cubic"
-      
       # 불연속성 임계값 (미터)
       # 인접 포인트 간 거리 차이가 이 값보다 크면 nearest neighbor 사용
-      discontinuity_threshold: 0.5
-      
-      # 이미지 특징 사용 여부
-      use_image_features: false  # 현재는 false 권장 (개발 중)
+      discontinuity_threshold: 0.3
 
     # 성능 설정
     performance:
