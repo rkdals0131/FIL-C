@@ -15,7 +15,7 @@ public:
     ImprovedInterpolationNode() : Node("improved_interpolation_node") {
         // 파라미터 선언
         this->declare_parameter("scale_factor", 3.0);
-        this->declare_parameter("use_image_features", true);
+        this->declare_parameter("use_image_features", false);
         this->declare_parameter("interpolation_method", "cubic");
         
         scale_factor_ = this->get_parameter("scale_factor").as_double();
