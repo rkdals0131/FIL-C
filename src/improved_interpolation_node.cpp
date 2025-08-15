@@ -42,7 +42,7 @@ public:
         
         // 발행자
         pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-            "/ouster/improved_interpolated_points", rclcpp::QoS(10).reliable());
+            "/ouster/points/interpolated", rclcpp::QoS(10).reliable());
         
         // 통계 타이머
         stats_timer_ = this->create_wall_timer(
