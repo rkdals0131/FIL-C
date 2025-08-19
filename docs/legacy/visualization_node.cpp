@@ -4,6 +4,7 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <cv_bridge/cv_bridge.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include "filc/config_loader.hpp"
 
@@ -26,7 +27,15 @@ public:
         
         // Load configuration
         if (config_file_path.empty()) {
-            config_file_path = "/home/user1/ROS2_Workspace/ros2_ws/src/filc/config/multi_general_configuration.yaml";
+            // Use ament_index to find package share directory
+            try {
+                std::string package_share_dir = ament_index_cpp::get_package_share_directory("filc");
+                config_file_path = package_share_dir + "/config/multi_general_configuration.yaml";
+            } catch (const std::exception& e) {
+                // Fallback to relative path from current working directory
+                config_file_path = "config/multi_general_configuration.yaml";
+                RCLCPP_WARN(this->get_logger(), "Failed to get package share directory, using relative path: %s", e.what());
+            }
             RCLCPP_WARN(this->get_logger(), "No config file specified, using default: %s", config_file_path.c_str());
         }
         

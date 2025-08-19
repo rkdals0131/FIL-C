@@ -8,8 +8,12 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}=== Building filc package ===${NC}"
 
+# 스크립트 위치 기반으로 워크스페이스 경로 동적 결정
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+
 # 워크스페이스로 이동
-cd /home/user1/ROS2_Workspace/ros2_ws
+cd "${WORKSPACE_ROOT}"
 
 # 빌드
 echo -e "${YELLOW}Building with colcon...${NC}"
