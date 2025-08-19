@@ -19,8 +19,8 @@ cameras:
     frame_id: camera_c
 
 general:
-  config_folder: /home/user1/ROS2_Workspace/ros2_ws/src/filc/config
-  data_folder: /home/user1/ROS2_Workspace/ros2_ws/src/filc/data
+  config_folder: ""  # Leave empty to use package default directory
+  data_folder: ""  # Leave empty to use package default directory
   camera_intrinsic_calibration: multi_camera_intrinsic_calibration.yaml
   camera_extrinsic_calibration: multi_camera_extrinsic_calibration.yaml
   slop: 0.1
